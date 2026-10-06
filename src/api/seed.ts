@@ -1,8 +1,47 @@
-import type { Issue } from './types'
+import type { Issue, Rule, RuleVersion } from './types'
 
 const commonHistory = (title: string) => [
   { at: '09-22 10:35', actor: '李予 / 审核员', action: '创建问题', detail: `录入 ${title}，并关联页面录屏。` },
   { at: '09-24 16:10', actor: '系统', action: '根因聚类', detail: '与同类问题合并，保留子问题追溯关系。' },
+]
+
+/** 首版规则库版本 */
+export const FIRST_RULE_VERSION_ID = 'rv-2026-08'
+/** 当前规则库版本 */
+export const CURRENT_RULE_VERSION_ID = 'rv-2026-09'
+
+export const seedRuleVersions: RuleVersion[] = [
+  {
+    id: FIRST_RULE_VERSION_ID,
+    version: '2026.08',
+    label: '规则库 2026.08（首版）',
+    releasedAt: '2026-08-01 09:00',
+    releasedBy: '规则委员会',
+    status: 'superseded',
+    changes: [],
+  },
+  {
+    id: CURRENT_RULE_VERSION_ID,
+    version: '2026.09',
+    label: '规则库 2026.09',
+    releasedAt: '2026-09-01 09:00',
+    releasedBy: '规则委员会',
+    status: 'current',
+    changes: [
+      { wcag: '2.1.2 无键盘陷阱', changeType: '收紧', detail: '新增移动端抽屉场景的焦点退出要求。' },
+      { wcag: '1.4.11 非文本对比度', changeType: '收紧', detail: '非文本图形对比度从 3:1 提升至 4.5:1。' },
+    ],
+  },
+]
+
+export const seedRules: Rule[] = [
+  { id: 'r-212', wcag: '2.1.2 无键盘陷阱', introducedVersion: FIRST_RULE_VERSION_ID, status: 'active' },
+  { id: 'r-211', wcag: '2.1.1 键盘', introducedVersion: FIRST_RULE_VERSION_ID, status: 'active' },
+  { id: 'r-243', wcag: '2.4.3 焦点顺序', introducedVersion: FIRST_RULE_VERSION_ID, status: 'active' },
+  { id: 'r-1411', wcag: '1.4.11 非文本对比度', introducedVersion: FIRST_RULE_VERSION_ID, status: 'active' },
+  { id: 'r-143', wcag: '1.4.3 对比度', introducedVersion: FIRST_RULE_VERSION_ID, status: 'active' },
+  { id: 'r-331', wcag: '3.3.1 错误识别', introducedVersion: FIRST_RULE_VERSION_ID, status: 'active' },
+  { id: 'r-413', wcag: '4.1.3 状态消息', introducedVersion: FIRST_RULE_VERSION_ID, status: 'active' },
 ]
 
 export const seedIssues: Issue[] = [
@@ -11,6 +50,7 @@ export const seedIssues: Issue[] = [
     title: '商品筛选抽屉无法通过键盘关闭',
     site: '商城 Web',
     version: 'v4.18',
+    ruleVersionId: CURRENT_RULE_VERSION_ID,
     wcag: ['2.1.2 无键盘陷阱', '2.1.1 键盘'],
     issueType: '键盘操作',
     impact: '致命',
@@ -32,7 +72,8 @@ export const seedIssues: Issue[] = [
     title: '客服弹窗焦点无法返回触发按钮',
     site: '商城 Web',
     version: 'v4.18',
-    wcag: ['2.4.3 焦点顺序'],
+    ruleVersionId: CURRENT_RULE_VERSION_ID,
+    wcag: ['2.1.2 无键盘陷阱', '2.4.3 焦点顺序'],
     issueType: '焦点管理',
     impact: '严重',
     affected: '客服入口 / 所有键盘用户',
@@ -76,6 +117,7 @@ export const seedIssues: Issue[] = [
     title: '数据图表颜色对比度不足',
     site: '运营后台',
     version: 'v2.7',
+    ruleVersionId: CURRENT_RULE_VERSION_ID,
     wcag: ['1.4.11 非文本对比度', '1.4.3 对比度'],
     issueType: '视觉对比',
     impact: '中等',
@@ -99,6 +141,7 @@ export const seedIssues: Issue[] = [
     title: '表单错误提示未被读屏软件播报',
     site: '采购门户',
     version: 'v1.12',
+    ruleVersionId: CURRENT_RULE_VERSION_ID,
     wcag: ['3.3.1 错误识别', '4.1.3 状态消息'],
     issueType: '错误提示',
     impact: '严重',

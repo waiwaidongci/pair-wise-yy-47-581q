@@ -8,18 +8,28 @@ import {
   DiffOutlined,
   FileDoneOutlined,
   MenuOutlined,
+  ThunderboltOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons'
+import { useRules } from '../api/useReapproval'
+import { useWorkspaceStore } from '../store/useWorkspaceStore'
 
 const items = [
   { key: '/', icon: <AppstoreOutlined />, label: <NavLink to="/">整改总览</NavLink> },
   { key: '/issues', icon: <BarsOutlined />, label: <NavLink to="/issues">问题台账</NavLink> },
   { key: '/retest', icon: <AuditOutlined />, label: <NavLink to="/retest">复测工作台</NavLink> },
   { key: '/versions', icon: <DiffOutlined />, label: <NavLink to="/versions">版本差异</NavLink> },
+  { key: '/rules', icon: <ThunderboltOutlined />, label: <NavLink to="/rules">规则库</NavLink> },
+  { key: '/reapproval', icon: <ReloadOutlined />, label: <NavLink to="/reapproval">重审批次</NavLink> },
   { key: '/report', icon: <FileDoneOutlined />, label: <NavLink to="/report">整改报告</NavLink> },
 ]
 
 export default function AppLayout() {
   const [open, setOpen] = useState(false)
+  useRules()
+  const ruleVersions = useWorkspaceStore((state) => state.ruleVersions)
+  const currentRuleVersionId = useWorkspaceStore((state) => state.currentRuleVersionId)
+  const currentVersion = ruleVersions.find((v) => v.id === currentRuleVersionId)
   const sidebar = (
     <div className="sidebar-inner">
       <div className="brand">
@@ -27,7 +37,7 @@ export default function AppLayout() {
         <div><strong>无障碍整改中心</strong><small>企业数字体验治理</small></div>
       </div>
       <Menu mode="inline" theme="dark" items={items} selectedKeys={[location.pathname]} onClick={() => setOpen(false)} />
-      <div className="sync-card"><Tag color="success">正常</Tag><strong>规则库 2026.09</strong><span>最后同步 16:42</span></div>
+      <div className="sync-card"><Tag color="success">正常</Tag><strong>规则库 {currentVersion?.version ?? '-'}</strong><span>最后同步 {currentVersion?.releasedAt ?? '-'}</span></div>
     </div>
   )
 

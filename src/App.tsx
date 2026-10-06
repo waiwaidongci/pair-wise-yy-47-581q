@@ -5,6 +5,8 @@ import IssuesPage from './pages/IssuesPage'
 import RetestPage from './pages/RetestPage'
 import VersionsPage from './pages/VersionsPage'
 import ReportPage from './pages/ReportPage'
+import RulesPage from './pages/RulesPage'
+import ReapprovalPage from './pages/ReapprovalPage'
 
 export default function App() {
   return (
@@ -14,6 +16,8 @@ export default function App() {
         <Route path="/issues" element={<IssuesPage />} />
         <Route path="/retest" element={<RetestPage />} />
         <Route path="/versions" element={<VersionsPage />} />
+        <Route path="/rules" element={<RulesPage />} />
+        <Route path="/reapproval" element={<ReapprovalPage />} />
         <Route path="/report" element={<ReportPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

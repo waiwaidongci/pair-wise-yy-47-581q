@@ -1,12 +1,15 @@
-import { Button, Progress, Space, Tag, Typography } from 'antd'
+import { Button, Progress, Space, Tag, Typography, Alert } from 'antd'
 import { ArrowRightOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useIssues } from '../api/useIssues'
+import { useReapprovalBatches } from '../api/useReapproval'
 import { useWorkspaceStore } from '../store/useWorkspaceStore'
 
 export default function DashboardPage() {
   useIssues()
+  useReapprovalBatches()
   const issues = useWorkspaceStore((state) => state.issues)
+  const batches = useWorkspaceStore((state) => state.batches)
   const navigate = useNavigate()
   const open = issues.filter((item) => !['已通过', '不适用'].includes(item.status))
   const passed = issues.filter((item) => item.status === '已通过').length
@@ -16,6 +19,8 @@ export default function DashboardPage() {
     const items = issues.filter((issue) => issue.site === site)
     return { site, total: items.length, passed: items.filter((item) => item.status === '已通过').length }
   })
+  const activeBatch = batches.find((b) => b.status === 'processing' || b.status === 'failed' || b.status === 'pending')
+  const conflictedBatch = batches.find((b) => b.status === 'conflicted')
 
   return (
     <section className="page">
@@ -30,6 +35,37 @@ export default function DashboardPage() {
           <Button type="primary" onClick={() => navigate('/issues')}>进入问题台账 <ArrowRightOutlined /></Button>
         </Space>
       </div>
+
+      {activeBatch && (
+        <Alert
+          type={activeBatch.status === 'failed' ? 'error' : 'info'}
+          showIcon
+          style={{ marginBottom: 14 }}
+          message={
+            activeBatch.status === 'failed'
+              ? `重审批次 ${activeBatch.id} 处理失败，可从站点游标恢复`
+              : `重审批次 ${activeBatch.id} 进行中（规则库 ${activeBatch.ruleVersion}）`
+          }
+          description={
+            <Space>
+              <span>
+                已完成 {activeBatch.sites.filter((s) => s.status === 'completed').length} / {activeBatch.sites.length} 个站点，
+                {activeBatch.diff.affectedCount} 项问题退出已通过。
+              </span>
+              <Button size="small" type="link" onClick={() => navigate('/reapproval')}>前往处理 →</Button>
+            </Space>
+          }
+        />
+      )}
+      {conflictedBatch && (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 14 }}
+          message={`检测到 ${batches.filter((b) => b.status === 'conflicted').length} 个并发冲突批次（后到者保留差异未生效）`}
+          description={<Button size="small" type="link" onClick={() => navigate('/reapproval')}>查看批次 →</Button>}
+        />
+      )}
 
       <div className="metric-grid">
         <div className="metric-card"><span>开放问题</span><strong>{open.length}</strong><small>{issues.length} 条总记录</small></div>
