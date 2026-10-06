@@ -1,8 +1,15 @@
 import { useState } from 'react'
-import { Button, Checkbox, Select, Space, Tag, Typography, message } from 'antd'
+import { Alert, Button, Checkbox, Select, Space, Tag, Typography, message } from 'antd'
 import { DownloadOutlined, FilePdfOutlined } from '@ant-design/icons'
+import dayjs from 'dayjs'
 import { useIssues } from '../api/useIssues'
 import { useWorkspaceStore } from '../store/useWorkspaceStore'
+import type { Issue } from '../api/types'
+
+/** 重审未确认前，报告保持上一版结论 */
+const effectiveStatus = (issue: Issue) => issue.pendingReReview?.previousStatus ?? issue.status
+const effectiveImpact = (issue: Issue) => issue.pendingReReview?.previousImpact ?? issue.impact
+const effectiveRuleVersion = (issue: Issue) => issue.pendingReReview?.previousRuleVersion ?? issue.ruleVersion ?? 'RV-2026.09'
 
 export default function ReportPage() {
   useIssues()
@@ -11,11 +18,12 @@ export default function ReportPage() {
   const [includeEvidence, setIncludeEvidence] = useState(true)
   const [includeHistory, setIncludeHistory] = useState(true)
   const visible = issues.filter((item) => site === '全部站点' || item.site === site)
+  const pending = visible.filter((item) => item.pendingReReview)
 
   const exportCsv = () => {
     const rows = [
-      ['编号', '站点', '版本', '问题', 'WCAG', '影响', '状态', '团队', '负责人', '截止日期'],
-      ...visible.map((issue) => [issue.key, issue.site, issue.version, issue.title, issue.wcag.join(' / '), issue.impact, issue.status, issue.team, issue.owner, issue.dueDate]),
+      ['编号', '站点', '版本', '问题', 'WCAG', '影响', '状态', '规则版本口径', '团队', '负责人', '截止日期'],
+      ...visible.map((issue) => [issue.key, issue.site, issue.version, issue.title, issue.wcag.join(' / '), effectiveImpact(issue), effectiveStatus(issue), issue.pendingReReview ? `${effectiveRuleVersion(issue)}（重审中）` : effectiveRuleVersion(issue), issue.team, issue.owner, issue.dueDate]),
     ]
     const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n')
     const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }))
@@ -41,6 +49,16 @@ export default function ReportPage() {
         </Space>
       </div>
 
+      {pending.length > 0 && (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 12 }}
+          message={`规则库已升级：${pending.length} 项结论待重审确认`}
+          description={`涉及 ${pending.map((item) => item.key).join('、')}。重审确认前，本报告（含导出）保持上一版结论。`}
+        />
+      )}
+
       <div className="panel" style={{ padding: 12, marginBottom: 14 }}>
         <Space wrap>
           <span>报告范围</span>
@@ -52,8 +70,8 @@ export default function ReportPage() {
 
       <article className="panel report-sheet">
         <header style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '3px solid #173e4d', paddingBottom: 16 }}>
-          <div><Typography.Text type="secondary">数字体验无障碍治理项目</Typography.Text><h2>网站无障碍整改报告</h2><Typography.Text>生成日期：2026-09-29 · WCAG 2.2 AA</Typography.Text></div>
-          <div style={{ textAlign: 'right' }}><Tag color="blue">{site}</Tag><div>问题 {visible.length} 项</div><div>通过 {visible.filter((item) => item.status === '已通过').length} 项</div></div>
+          <div><Typography.Text type="secondary">数字体验无障碍治理项目</Typography.Text><h2>网站无障碍整改报告</h2><Typography.Text>生成日期：{dayjs().format('YYYY-MM-DD')} · WCAG 2.2 AA</Typography.Text></div>
+          <div style={{ textAlign: 'right' }}><Tag color="blue">{site}</Tag><div>问题 {visible.length} 项</div><div>通过 {visible.filter((item) => effectiveStatus(item) === '已通过').length} 项</div>{pending.length > 0 && <div><Tag color="orange">{pending.length} 项沿用上一版结论</Tag></div>}</div>
         </header>
         <table>
           <thead><tr><th>编号</th><th>页面 / 范围</th><th>问题与 WCAG</th><th>影响</th><th>状态 / 责任</th><th>截止</th></tr></thead>
@@ -63,8 +81,12 @@ export default function ReportPage() {
                 <td>{issue.key}</td>
                 <td>{issue.site}<br /><Typography.Text type="secondary">{issue.version}</Typography.Text></td>
                 <td><strong>{issue.title}</strong><br />{issue.wcag.join(' / ')}{includeEvidence && <><br /><Typography.Link href={issue.evidence}>查看证据</Typography.Link></>}</td>
-                <td><Tag color={issue.impact === '致命' ? 'red' : issue.impact === '严重' ? 'volcano' : 'gold'}>{issue.impact}</Tag></td>
-                <td>{issue.status}<br />{issue.team} / {issue.owner}</td>
+                <td><Tag color={effectiveImpact(issue) === '致命' ? 'red' : effectiveImpact(issue) === '严重' ? 'volcano' : 'gold'}>{effectiveImpact(issue)}</Tag></td>
+                <td>
+                  {effectiveStatus(issue)}
+                  {issue.pendingReReview && <><br /><Tag color="orange" style={{ marginTop: 4 }}>重审中 · 沿用 {issue.pendingReReview.previousRuleVersion} 结论</Tag></>}
+                  <br />{issue.team} / {issue.owner}
+                </td>
                 <td>{issue.dueDate}</td>
               </tr>
             ))}

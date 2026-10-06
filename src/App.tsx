@@ -4,6 +4,7 @@ import DashboardPage from './pages/DashboardPage'
 import IssuesPage from './pages/IssuesPage'
 import RetestPage from './pages/RetestPage'
 import VersionsPage from './pages/VersionsPage'
+import RulesPage from './pages/RulesPage'
 import ReportPage from './pages/ReportPage'
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/issues" element={<IssuesPage />} />
         <Route path="/retest" element={<RetestPage />} />
         <Route path="/versions" element={<VersionsPage />} />
+        <Route path="/rules" element={<RulesPage />} />
         <Route path="/report" element={<ReportPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

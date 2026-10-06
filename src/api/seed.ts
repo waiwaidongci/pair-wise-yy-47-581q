@@ -1,8 +1,12 @@
-import type { Issue } from './types'
+import type { Issue, RuleVersion } from './types'
 
 const commonHistory = (title: string) => [
   { at: '09-22 10:35', actor: '李予 / 审核员', action: '创建问题', detail: `录入 ${title}，并关联页面录屏。` },
   { at: '09-24 16:10', actor: '系统', action: '根因聚类', detail: '与同类问题合并，保留子问题追溯关系。' },
+]
+
+export const seedRuleVersions: RuleVersion[] = [
+  { id: 'RV-2026.09', revision: 1, publishedBy: '李予 / 审核员', publishedAt: '09-20 09:30', changes: [], status: '已生效' },
 ]
 
 export const seedIssues: Issue[] = [
@@ -24,6 +28,7 @@ export const seedIssues: Issue[] = [
     owner: '何沐',
     dueDate: '2026-10-06',
     mergedKeys: ['A11Y-1052', 'A11Y-1061'],
+    ruleVersion: 'RV-2026.09',
     retestRecords: [],
     history: commonHistory('筛选抽屉键盘陷阱'),
   },
@@ -47,6 +52,7 @@ export const seedIssues: Issue[] = [
     mergedKeys: [],
     fixNote: '增加关闭后的 triggerRef.focus 恢复逻辑。',
     retestEnv: 'Chrome 140 / VoiceOver / 商城 v4.18.3',
+    ruleVersion: 'RV-2026.09',
     retestRecords: [{ id: 'RT-22', actor: '苏禾', result: '通过', note: '焦点返回触发按钮，顺序正确。', at: '09-28 14:20' }],
     history: commonHistory('客服弹窗焦点恢复'),
   },
@@ -72,6 +78,29 @@ export const seedIssues: Issue[] = [
     history: commonHistory('优惠券选择层键盘循环'),
   },
   {
+    key: 'A11Y-1093',
+    title: '积分兑换弹窗焦点顺序与视觉顺序不一致',
+    site: '会员中心',
+    version: 'v3.9',
+    wcag: ['2.4.3 焦点顺序'],
+    issueType: '焦点管理',
+    impact: '中等',
+    affected: '积分兑换弹窗 / 键盘用户',
+    reproduction: '弹窗内 Tab 先落到底部按钮，再回到输入框，与视觉顺序相反。',
+    evidence: 'https://evidence.example.com/a11y-1093',
+    rootCause: '弹窗 DOM 顺序与视觉布局不一致',
+    status: '已通过',
+    priority: 'P2',
+    team: '结算体验组',
+    owner: '岑蔚',
+    dueDate: '2026-09-28',
+    mergedKeys: [],
+    fixNote: '调整 DOM 顺序并移除正向 tabindex。',
+    retestEnv: 'Edge 140 / 键盘 / member-v3.9.2',
+    retestRecords: [{ id: 'RT-45', actor: '李予', result: '通过', note: '焦点顺序与视觉一致。', at: '09-26 10:15' }],
+    history: commonHistory('积分弹窗焦点顺序'),
+  },
+  {
     key: 'A11Y-1074',
     title: '数据图表颜色对比度不足',
     site: '运营后台',
@@ -91,8 +120,33 @@ export const seedIssues: Issue[] = [
     mergedKeys: [],
     fixNote: '更换色板并增加虚线纹理和可切换数据表。',
     retestEnv: 'Safari 26 / 对比度工具 / admin-v2.7.5',
+    ruleVersion: 'RV-2026.09',
     retestRecords: [],
     history: commonHistory('图表颜色对比度'),
+  },
+  {
+    key: 'A11Y-1089',
+    title: '空数据图表缺少文本替代',
+    site: '运营后台',
+    version: 'v2.7',
+    wcag: ['1.1.1 非文本内容'],
+    issueType: '文本替代',
+    impact: '中等',
+    affected: '空状态报表 / 屏幕阅读器用户',
+    reproduction: '无数据时图表区域仅展示插画，读屏软件无任何播报。',
+    evidence: 'https://evidence.example.com/a11y-1089',
+    rootCause: '图表空状态组件未提供 role="img" 与 aria-label',
+    status: '已通过',
+    priority: 'P2',
+    team: '数据可视化组',
+    owner: '赵屿',
+    dueDate: '2026-09-30',
+    mergedKeys: [],
+    fixNote: '空状态容器增加 role="img" 与 aria-label 文本说明。',
+    retestEnv: 'Chrome 140 / NVDA / admin-v2.7.5',
+    ruleVersion: 'RV-2026.09',
+    retestRecords: [{ id: 'RT-40', actor: '苏禾', result: '通过', note: '空状态可正确播报说明文本。', at: '09-27 15:40' }],
+    history: commonHistory('空状态文本替代'),
   },
   {
     key: 'A11Y-1083',

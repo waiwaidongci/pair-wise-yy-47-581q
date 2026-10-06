@@ -1,4 +1,4 @@
-import { Button, Progress, Space, Tag, Typography } from 'antd'
+import { Alert, Button, Progress, Space, Tag, Typography } from 'antd'
 import { ArrowRightOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useIssues } from '../api/useIssues'
@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const passed = issues.filter((item) => item.status === '已通过').length
   const critical = issues.filter((item) => item.impact === '致命' || item.impact === '严重').length
   const coverage = Math.round((passed / issues.length) * 100)
+  const pendingReReview = issues.filter((item) => item.pendingReReview)
   const bySite = Array.from(new Set(issues.map((item) => item.site))).map((site) => {
     const items = issues.filter((issue) => issue.site === site)
     return { site, total: items.length, passed: items.filter((item) => item.status === '已通过').length }
@@ -30,6 +31,17 @@ export default function DashboardPage() {
           <Button type="primary" onClick={() => navigate('/issues')}>进入问题台账 <ArrowRightOutlined /></Button>
         </Space>
       </div>
+
+      {pendingReReview.length > 0 && (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 14 }}
+          message={`规则库升级：${pendingReReview.length} 项「已通过」结论待重审`}
+          description={`涉及 ${[...new Set(pendingReReview.map((item) => item.site))].join('、')}；重审确认前整改报告保持上一版结论。`}
+          action={<Button size="small" onClick={() => navigate('/rules')}>查看重审批次</Button>}
+        />
+      )}
 
       <div className="metric-grid">
         <div className="metric-card"><span>开放问题</span><strong>{open.length}</strong><small>{issues.length} 条总记录</small></div>

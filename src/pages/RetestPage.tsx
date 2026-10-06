@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Alert, Button, Descriptions, Form, Input, Radio, Space, Table, Tag, Typography, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import axios from 'axios'
+import { useQueryClient } from '@tanstack/react-query'
 import { useIssues } from '../api/useIssues'
 import { useWorkspaceStore } from '../store/useWorkspaceStore'
 import type { Issue } from '../api/types'
@@ -10,6 +11,7 @@ export default function RetestPage() {
   useIssues()
   const issues = useWorkspaceStore((state) => state.issues)
   const updateIssue = useWorkspaceStore((state) => state.updateIssue)
+  const queryClient = useQueryClient()
   const queue = issues.filter((item) => ['待复测', '已退回'].includes(item.status))
   const [active, setActive] = useState<Issue | null>(queue[0] ?? null)
   const [form] = Form.useForm()
@@ -20,6 +22,9 @@ export default function RetestPage() {
     updateIssue(data)
     setActive(data)
     form.resetFields()
+    // 复测提交会联动确认挂起的规则重审任务，报告随之切换结论
+    queryClient.invalidateQueries({ queryKey: ['issues'] })
+    queryClient.invalidateQueries({ queryKey: ['rereview-tasks'] })
     message.success(`复测结果已记录：${values.result}`)
   }
 
@@ -27,7 +32,7 @@ export default function RetestPage() {
     { title: '问题', dataIndex: 'key', render: (_, record) => <div><Typography.Text strong>{record.key}</Typography.Text><div>{record.title}</div></div> },
     { title: '修复说明', dataIndex: 'fixNote', width: 260, render: (value) => value ?? '未提交' },
     { title: '环境', dataIndex: 'retestEnv', width: 200, render: (value) => value ?? '待开发提交' },
-    { title: '状态', dataIndex: 'status', width: 90, render: (value) => <Tag color={value === '已退回' ? 'error' : 'orange'}>{value}</Tag> },
+    { title: '状态', dataIndex: 'status', width: 130, render: (value, record) => <Space size={4}><Tag color={value === '已退回' ? 'error' : 'orange'}>{value}</Tag>{record.pendingReReview && <Tag color="purple">规则重审</Tag>}</Space> },
   ]
 
   return (
@@ -41,7 +46,7 @@ export default function RetestPage() {
         <Tag color="orange">{queue.length} 项待复测</Tag>
       </div>
 
-      <Alert type="info" showIcon style={{ marginBottom: 12 }} message="复测规则" description="键盘问题必须覆盖 Tab、Shift+Tab、Esc 和焦点返回；屏幕阅读器问题需保留截图或播报日志。" />
+      <Alert type="info" showIcon style={{ marginBottom: 12 }} message="复测规则" description="键盘问题必须覆盖 Tab、Shift+Tab、Esc 和焦点返回；屏幕阅读器问题需保留截图或播报日志。标记「规则重审」的问题由规则库升级触发，提交复测即确认重审，报告同步切换到新版结论。" />
 
       <div className="review-grid">
         <div className="panel">
@@ -58,6 +63,11 @@ export default function RetestPage() {
                 <Descriptions.Item label="根因">{active.rootCause}</Descriptions.Item>
                 <Descriptions.Item label="修复说明">{active.fixNote ?? '未提交'}</Descriptions.Item>
                 <Descriptions.Item label="复测环境">{active.retestEnv ?? '待开发提交'}</Descriptions.Item>
+                {active.pendingReReview && (
+                  <Descriptions.Item label="规则重审">
+                    规则库升级触发（任务 {active.pendingReReview.taskId}），上一版结论：{active.pendingReReview.previousStatus} / {active.pendingReReview.previousImpact} / {active.pendingReReview.previousRuleVersion}；确认前报告沿用该结论。
+                  </Descriptions.Item>
+                )}
               </Descriptions>
               <Form form={form} layout="vertical" style={{ marginTop: 18 }} onFinish={submit} initialValues={{ result: '已通过' }}>
                 <Form.Item name="result" label="复测结论" rules={[{ required: true }]}>
